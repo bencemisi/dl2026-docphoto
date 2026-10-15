@@ -35,7 +35,7 @@ def build_splits(df: pd.DataFrame, group_column: str = "group_strict", val_fract
                  seed: int = config.SPLIT_SEED) -> tuple[np.ndarray, np.ndarray]:
     """TASK 1. Hold out whole units of `group_column` until at least `val_fraction` of the rows are held out.
 
-    The training set has only six strict units, so which one is held out
+    The training set has only six strict units, so which one is held out   ,
     matters more than how. To make everyone in the room hold out the same
     one, follow this procedure exactly:
 
@@ -49,4 +49,20 @@ def build_splits(df: pd.DataFrame, group_column: str = "group_strict", val_fract
     looks like. Together they cover every row exactly once, and no value of
     `group_column` is on both sides.
     """
-    raise NotImplementedError("TASK 1: the grouped split")
+    groups = df[group_column].to_numpy()
+    units = np.sort(pd.unique(groups))
+    np.random.default_rng(seed).shuffle(units)
+
+    n_rows = len(df)
+    val_mask = np.zeros(n_rows, dtype=bool)
+    n_val = 0
+    for unit in units:
+        if n_val >= val_fraction * n_rows:
+            break
+        unit_mask = groups == unit
+        val_mask = val_mask | unit_mask;
+        n_val += int(unit_mask.sum())
+
+    val_idx = np.flatnonzero(val_mask)
+    train_idx = np.flatnonzero(~val_mask)
+    return train_idx, val_idx
